@@ -1,11 +1,47 @@
 var Genre=require('../models/genre');
+var async=require('async');
+var Book=require('../models/book');
+var mongoose=require('mongoose');
 //Display List of all Genre
 exports.genre_list=function(req,res){
-    res.send('NOT IMPLEMENTED :GENRE LIST')
+   Genre.find()
+   .sort([['name' ,'ascending']])
+   .exec(function(err ,list_genre){
+       if(err) {return next (err);}
+       //Successful so render
+       res.render( genre_list ,{title :'Genre List' ,genre_list:list_genre})
+   })
 };
 //Display detail page of every genre
 exports.genre_detail=function(req,res){
-    res.send('Not Implemented :Genre Detail' +req.params.id)
+    //res.send('Not Implemented :Genre Detail' +req.params.id)
+    async.parallel({
+        genre:function(callback){
+            Genre.findById(req.params.id)
+            .exec(callback);
+
+        },
+        genre_books:function(callback){
+            Book.find({'genre':req.params.id})
+                .exec(callback)
+            
+        },
+        function(err,results){
+            if(err){
+                return next(err)
+            }
+            //No results
+            if(results.genre==null){
+                var err=new Error('Genre Not Found');
+                err.status=404;
+                return next(err);
+
+            }
+            //Successful render
+            res.render(genre_detail ,{title:'Genre Detail List' ,genre:results.genre , genre_books:results.genre_books}) 
+        }
+
+    })
 };
 
 //Display create genre form on GET
